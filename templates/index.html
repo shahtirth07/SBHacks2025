@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <title>Chatbot & Summary Enhancer</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome to Chatbot & Summarizer</h1>
+
+      <!-- Upload and Summary Section -->
+      <div class="upload-container">
+        <h2>Upload and Summarize</h2>
+        <input type="file" id="file-input" />
+        <button id="upload-btn">Upload & Summarize</button>
+      </div>
+
+      <div class="summary-container">
+        <h2>Summary</h2>
+        <textarea id="summary-text" readonly></textarea>
+      </div>
+
+      <!-- Placeholder for Dynamic Content -->
+      <div class="dynamic-content">
+        <h2>Generated Insights</h2>
+        <div id="dynamic-images"></div>
+        <div id="dynamic-graphs"></div>
+      </div>
+    </div>
+
+    <!-- Chatbot Floating Widget -->
+    <div class="chat-widget">
+      <div class="chat-header" id="chat-header">
+        <button class="chat-toggle-btn" id="chat-toggle-btn">💬 Chat</button>
+      </div>
+      <div class="chat-container" id="chat-container">
+        <div class="chat-window" id="chat-window">
+          <!-- Chat messages will appear here -->
+        </div>
+        <div class="chat-input">
+          <input type="text" id="user-input" placeholder="Type a message..." />
+          <button id="send-btn">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  </body>
+</html>
