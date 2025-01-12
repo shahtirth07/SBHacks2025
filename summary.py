@@ -21,7 +21,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
 # Specify the Pinecone index name
-index_name = "demo3"
+index_name = "nervous"
 if index_name not in [idx.name for idx in pinecone_client.list_indexes()]:
     pinecone_client.create_index(
         name=index_name,

@@ -26,7 +26,7 @@ pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 anthropic_client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 # Pinecone initialization
-index_name = "demo3"
+index_name = "nervous"
 if index_name not in [idx.name for idx in pinecone_client.list_indexes()]:
     pinecone_client.create_index(
         name=index_name,
@@ -137,9 +137,9 @@ def e_learning():
     
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file)
     try:
-        # Example: Generate notes for chapters 1-5
+        # Example: Generate notes for chapters 1-3
         chapter_notes = {}
-        for chapter in range(1, 6):
+        for chapter in range(1, 3):
             query = f"Detailed notes for Chapter {chapter}"
             retrieved_chunks = retrieve_relevant_chunks(query, top_k=5)
             notes = generate_detailed_notes(retrieved_chunks, chapter)

@@ -17,7 +17,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
 # Specify index name
-index_name = "demo"
+index_name = "nervous"
 
 # Check if the index exists; if not, create it
 if index_name not in pinecone_client.list_indexes().names():
@@ -27,7 +27,7 @@ if index_name not in pinecone_client.list_indexes().names():
         metric="cosine",
         spec=ServerlessSpec(
             cloud="aws",  # Specify cloud provider
-            region="us-west-1"  # Specify region
+            region="us-east-1"  # Specify region
         )
     )
 

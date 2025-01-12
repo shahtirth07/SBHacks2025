@@ -34,7 +34,9 @@ if index_name not in [idx.name for idx in pinecone_client.list_indexes()]:
             region="us-east-1"
         )
     )
+
 index = pinecone_client.Index(index_name)
+
 
 # Initialize Anthropic
 anthropic_client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
@@ -77,25 +79,18 @@ def index_pdf_chunks(chunks):
         index.upsert([{"id": f"chunk-{i}", "values": embedding, "metadata": metadata}])
 
 # Function to query Pinecone and retrieve relevant chunks
-def retrieve_relevant_chunks(query, top_k=5, index=None):
+def retrieve_relevant_chunks(query, top_k=5):
     """
     Query Pinecone to retrieve the most relevant chunks for the input query.
     """
-    if index is None:
-        raise ValueError("Pinecone index object is required.")
-
-    print(f"Querying Pinecone with query: {query}")
-    print(f"Index type: {type(index)}")  # Debug: Verify index type
-
     query_embedding = openai.Embedding.create(
         model="text-embedding-ada-002",
         input=[query]
     )['data'][0]['embedding']
-
     results = index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
     return [match['metadata']['text'] for match in results['matches']]
 
-    # Function to generate detailed notes for a chapter
+# Function to generate detailed notes for a chapter
 def generate_detailed_notes(retrieved_chunks, chapter_number):
     """
     Use Anthropic Claude to generate detailed notes for a chapter.
@@ -132,32 +127,35 @@ if __name__ == "__main__":
     pdf_path = f"./uploads/{uploaded_file_name}"  # Construct the dynamic path
 
     try:
-        print("Processing PDF and indexing chunks...")
+        print("Processing PDF and indexing chunks...\n")
         
         # Process PDF and index chunks
         chunks = process_pdf(pdf_path)
         index_pdf_chunks(chunks)
         
-        print("PDF content indexed successfully.")
+        print("PDF content indexed successfully.\n")
         
-        # Generate notes for each chapter
-        chapter_numbers = [1, 2, 3, 4, 5]  # Example chapter numbers
+        # Generate and print notes for each chapter
+        all_notes = []  # List to store all notes
+
+        chapter_numbers = [1, 2, 3]  # Example chapter numbers
         for chapter in chapter_numbers:
-            print(f"Generating notes for Chapter {chapter}...")
+            print(f"Generating notes for Chapter {chapter}...\n")
             
             # Customize query for each chapter
             query = f"Detailed notes for Chapter {chapter}"
-            retrieved_chunks = retrieve_relevant_chunks(query, top_k=5, index=index)  # Pass index explicitly
+            retrieved_chunks = retrieve_relevant_chunks(query, top_k=5)
             notes = generate_detailed_notes(retrieved_chunks, chapter)
             
-            # Save notes to a chapter-specific file
-            output_file = f"./uploads/Chapter_{chapter}_notes.txt"
-            with open(output_file, "w", encoding="utf-8") as f:  # Ensure UTF-8 encoding
-                f.write(notes)
-            
-            print(f"Notes for Chapter {chapter} saved to {output_file}.")
+            # Append the chapter's notes to the list
+            all_notes.append(f"Chapter {chapter}:\n{notes}\n")
+            print(f"Notes for Chapter {chapter} generated.\n")
+
+        # Print all the notes together
+        print("All Chapters' Notes:\n")
+        print("\n".join(all_notes))
     
     except FileNotFoundError as e:
         print(str(e))
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        print(f"An error occurred: {str(e)}")
