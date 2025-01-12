@@ -7,8 +7,11 @@ import anthropic
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
 import re
-from summary import summarize_pdf
+from summary import retrieve_relevant_chunks
 from e_learning import generate_detailed_notes
+# import pandas as pd
+# import json
+# from dashboard import extract_images_with_captions, extract_tables_with_captions
 
 app = Flask(__name__)
 
@@ -124,9 +127,18 @@ def generate_summary():
     
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file)
     try:
-        summary = summarize_pdf(file_path)
-        return render_template('index.html', summary=summary, uploaded_file=uploaded_file)
+        # Extract text from the PDF
+        raw_text = process_pdf(file_path)
+        
+        # Beautify the output for better readability
+        beautified_text = beautify_text("\n".join(raw_text))
+        
+        return render_template('index.html', summary=beautified_text, uploaded_file=uploaded_file)
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error generating summary: {e}")
+        print(error_details)
         return render_template('index.html', error=f"Error generating summary: {str(e)}")
 
 @app.route('/e_learning', methods=['POST'])
@@ -149,6 +161,23 @@ def e_learning():
     except Exception as e:
         return render_template('index.html', error=f"Error generating e-learning content: {str(e)}")
 
+def beautify_text(text):
+    # Split the text into lines or paragraphs
+    lines = text.split('\n')
+
+    # Remove any empty lines
+    cleaned_lines = [line.strip() for line in lines if line.strip()]
+
+    # Format as bullet points
+    formatted_text = '\n'.join(f"- {line}" for line in cleaned_lines)
+    
+    return formatted_text
+
+from flask import send_from_directory
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory('static', filename)
 
 if __name__ == '__main__':
     app.run(debug=True)

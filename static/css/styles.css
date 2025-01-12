@@ -125,7 +125,7 @@ body {
   .chat-window {
     max-height: 300px;
     overflow-y: auto;
-    background: #f7f7f7;
+    background: #772c2c;
     padding: 10px;
   }
   
@@ -199,6 +199,89 @@ body {
 
 #summary-text::-webkit-scrollbar-track {
   background-color: rgba(0, 0, 0, 0.1); /* Track color */
+}
+
+/* General styling for the dashboard container */
+.dashboard-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* Section titles */
+h2, h3, h4 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+/* Images Section Styling */
+.images-section {
+  margin-bottom: 30px;
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.image-item {
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+.image-item img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 5px;
+}
+
+.image-item p {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+/* Tables Section Styling */
+.tables-section {
+  margin-top: 30px;
+}
+
+.table-container {
+  margin-bottom: 30px;
+}
+
+.table-container h4 {
+  color: #555;
+  margin-bottom: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+table th,
+table td {
+  border: 1px solid #e47d7d;
+  text-align: left;
+  padding: 8px;
+}
+
+table th {
+  background-color: #f78585;
+  font-weight: bold;
+}
+
+table tr:nth-child(even) {
+  background-color: #a34f4f;
+}
+
+table tr:hover {
+  background-color: #4cdb51;
 }
 
   

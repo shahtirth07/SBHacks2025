@@ -69,6 +69,56 @@
       </div>
       {% endif %}
 
+      <!-- Dashboard Section
+      {% if dashboard_data %}
+      <div class="dashboard-container">
+        <h2>Dashboard</h2>
+        <div class="dashboard-content">
+          {% for image in dashboard_data.images %}
+          <div class="image-container">
+            <img src="{{ image.src }}" alt="Image with Caption" />
+            <p>{{ image.caption }}</p>
+          </div>
+          {% endfor %} {% for table in dashboard_data.tables %}
+          <div class="table-container">
+            <h3>{{ table.caption }}</h3>
+            <table>
+              <thead>
+                <tr>
+                  {% for col in table.columns %}
+                  <th>{{ col }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in table.rows %}
+                <tr>
+                  {% for cell in row %}
+                  <td>{{ cell }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="action-container">
+        <h2>Dashboard</h2>
+        <form action="/generate_dashboard" method="POST">
+          <input
+            type="text"
+            name="json_path"
+            placeholder="Enter JSON file path"
+            required
+          />
+          <button type="submit">Generate Dashboard</button>
+        </form>
+      </div> -->
+
       <!-- Placeholder for Dynamic Content -->
       <div class="dynamic-content">
         <h2>Generated Insights</h2>
@@ -76,6 +126,56 @@
         <div id="dynamic-graphs"></div>
       </div>
     </div>
+
+    <!-- Images Section -->
+    <!-- <div class="images-section">
+    <h3>Extracted Images</h3>
+    {% if dashboard_data.images %}
+      <div class="images-grid">
+        {% for image in dashboard_data.images %}
+          <div class="image-item">
+            <img src="{{ image.src }}" alt="Image with Caption" />
+            <p>{{ image.caption }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No images available.</p>
+    {% endif %}
+  </div> -->
+
+    <!-- Tables Section -->
+    <!-- <div class="tables-section">
+    <h3>Extracted Tables</h3>
+    {% if dashboard_data.tables %}
+      {% for table in dashboard_data.tables %}
+        <div class="table-container">
+          <h4>{{ table.caption }}</h4>
+          <table>
+            <thead>
+              <tr>
+                {% for col in table.columns %}
+                  <th>{{ col }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in table.rows %}
+                <tr>
+                  {% for cell in row %}
+                    <td>{{ cell }}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No tables available.</p>
+    {% endif %}
+  </div>
+</div> -->
 
     <!-- Chatbot Floating Widget -->
     <div class="chat-widget">
