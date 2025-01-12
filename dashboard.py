@@ -7,6 +7,10 @@ Original file is located at
     https://colab.research.google.com/drive/1aRxFwsWCuasc6pOUH2iSpP86GqERj46M
 """
 
+pip install anthropic
+
+pip install pinecone
+
 import os
 import json
 import base64
