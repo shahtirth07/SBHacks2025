@@ -17,38 +17,32 @@
       <div class="upload-container">
         <h2>Upload PDF</h2>
         <form action="/upload" method="POST" enctype="multipart/form-data">
-          <input type="file" name="file" id="file-input" accept=".pdf" />
+          <input type="file" name="file" id="file-input" accept=".pdf" required />
           <button type="submit">Upload</button>
         </form>
         {% if message %}
         <p style="color: green">{{ message }}</p>
-        {% endif %} {% if error %}
+        {% endif %}
+        {% if error %}
         <p style="color: red">{{ error }}</p>
         {% endif %}
       </div>
 
       <!-- Buttons for Actions -->
+      {% if uploaded_file %}
       <div class="action-container">
         <h2>Generate Content</h2>
         <form action="/generate_summary" method="POST">
-          <input
-            type="hidden"
-            name="uploaded_file"
-            value="{{ uploaded_file }}"
-          />
+          <input type="hidden" name="uploaded_file" value="{{ uploaded_file }}" />
           <button type="submit">Generate Summary</button>
         </form>
         <form action="/e_learning" method="POST">
-          <input
-            type="hidden"
-            name="uploaded_file"
-            value="{{ uploaded_file }}"
-          />
+          <input type="hidden" name="uploaded_file" value="{{ uploaded_file }}" />
           <input type="hidden" name="summary" value="{{ summary }}" />
-          <!-- Persist summary -->
           <button type="submit">E-Learning</button>
         </form>
       </div>
+      {% endif %}
 
       <!-- Summary Section -->
       {% if summary %}
@@ -69,19 +63,28 @@
       </div>
       {% endif %}
 
-      <!-- Dashboard Section
-      {% if dashboard_data %}
+      <!-- Dashboard Section -->
+      {% if dashboard_data.images or dashboard_data.tables %}
       <div class="dashboard-container">
         <h2>Dashboard</h2>
         <div class="dashboard-content">
-          {% for image in dashboard_data.images %}
-          <div class="image-container">
-            <img src="{{ image.src }}" alt="Image with Caption" />
-            <p>{{ image.caption }}</p>
+          {% if dashboard_data.images %}
+          <h3>Extracted Images</h3>
+          <div class="images-grid">
+            {% for image in dashboard_data.images %}
+            <div class="image-item">
+              <img src="{{ image.src }}" alt="Image with Caption" />
+              <p>{{ image.caption }}</p>
+            </div>
+            {% endfor %}
           </div>
-          {% endfor %} {% for table in dashboard_data.tables %}
+          {% endif %}
+
+          {% if dashboard_data.tables %}
+          <h3>Extracted Tables</h3>
+          {% for table in dashboard_data.tables %}
           <div class="table-container">
-            <h3>{{ table.caption }}</h3>
+            <h4>{{ table.caption }}</h4>
             <table>
               <thead>
                 <tr>
@@ -102,93 +105,26 @@
             </table>
           </div>
           {% endfor %}
+          {% endif %}
         </div>
       </div>
+      {% else %}
+      <p>No dashboard data available.</p>
       {% endif %}
 
-      <div class="action-container">
-        <h2>Dashboard</h2>
-        <form action="/generate_dashboard" method="POST">
-          <input
-            type="text"
-            name="json_path"
-            placeholder="Enter JSON file path"
-            required
-          />
-          <button type="submit">Generate Dashboard</button>
-        </form>
-      </div> -->
-
-      <!-- Placeholder for Dynamic Content -->
-      <div class="dynamic-content">
-        <h2>Generated Insights</h2>
-        <div id="dynamic-images"></div>
-        <div id="dynamic-graphs"></div>
-      </div>
-    </div>
-
-    <!-- Images Section -->
-    <!-- <div class="images-section">
-    <h3>Extracted Images</h3>
-    {% if dashboard_data.images %}
-      <div class="images-grid">
-        {% for image in dashboard_data.images %}
-          <div class="image-item">
-            <img src="{{ image.src }}" alt="Image with Caption" />
-            <p>{{ image.caption }}</p>
+      <!-- Chatbot Floating Widget -->
+      <div class="chat-widget">
+        <div class="chat-header" id="chat-header">
+          <button class="chat-toggle-btn" id="chat-toggle-btn">💬 Chat</button>
+        </div>
+        <div class="chat-container" id="chat-container">
+          <div class="chat-window" id="chat-window">
+            <!-- Chat messages will appear here -->
           </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p>No images available.</p>
-    {% endif %}
-  </div> -->
-
-    <!-- Tables Section -->
-    <!-- <div class="tables-section">
-    <h3>Extracted Tables</h3>
-    {% if dashboard_data.tables %}
-      {% for table in dashboard_data.tables %}
-        <div class="table-container">
-          <h4>{{ table.caption }}</h4>
-          <table>
-            <thead>
-              <tr>
-                {% for col in table.columns %}
-                  <th>{{ col }}</th>
-                {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in table.rows %}
-                <tr>
-                  {% for cell in row %}
-                    <td>{{ cell }}</td>
-                  {% endfor %}
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p>No tables available.</p>
-    {% endif %}
-  </div>
-</div> -->
-
-    <!-- Chatbot Floating Widget -->
-    <div class="chat-widget">
-      <div class="chat-header" id="chat-header">
-        <button class="chat-toggle-btn" id="chat-toggle-btn">💬 Chat</button>
-      </div>
-      <div class="chat-container" id="chat-container">
-        <div class="chat-window" id="chat-window">
-          <!-- Chat messages will appear here -->
-        </div>
-        <div class="chat-input">
-          <input type="text" id="user-input" placeholder="Type a message..." />
-          <button id="send-btn">Send</button>
+          <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Type a message..." />
+            <button id="send-btn">Send</button>
+          </div>
         </div>
       </div>
     </div>

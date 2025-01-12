@@ -1,17 +1,15 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import os
-from chatbot import ask_claude
+import traceback
 import pdfplumber
+import re
 import openai
 import anthropic
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
-import re
 from summary import retrieve_relevant_chunks
 from e_learning import generate_detailed_notes
-# import pandas as pd
-# import json
-# from dashboard import extract_images_with_captions, extract_tables_with_captions
+from chatbot import ask_claude
 
 app = Flask(__name__)
 
@@ -42,15 +40,19 @@ if index_name not in [idx.name for idx in pinecone_client.list_indexes()]:
     )
 index = pinecone_client.Index(index_name)
 
+# Utility functions
 def chunk_text(text, chunk_size=500):
     text = re.sub(r'\s+', ' ', text)
     words = text.split()
-    chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
-    return chunks
+    return [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
 
 def process_pdf(pdf_path):
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"File not found: {pdf_path}")
     with pdfplumber.open(pdf_path) as pdf:
-        text = "\n".join([page.extract_text() for page in pdf.pages])
+        text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+    if not text.strip():
+        raise ValueError("The uploaded PDF is empty or contains no extractable text.")
     return chunk_text(text)
 
 def index_pdf_chunks(chunks):
@@ -62,34 +64,16 @@ def index_pdf_chunks(chunks):
         metadata = {"text": chunk}
         index.upsert([{"id": f"chunk-{i}", "values": embedding, "metadata": metadata}])
 
-def retrieve_relevant_chunks(query, top_k=5):
-    query_embedding = openai.Embedding.create(
-        model="text-embedding-ada-002",
-        input=[query]
-    )['data'][0]['embedding']
-    results = index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
-    return [match['metadata']['text'] for match in results['matches']]
+def beautify_text(text):
+    lines = text.split('\n')
+    cleaned_lines = [line.strip() for line in lines if line.strip()]
+    return '\n'.join(f"- {line}" for line in cleaned_lines)
 
-def generate_summary(retrieved_chunks):
-    context = "\n".join(retrieved_chunks)
-    prompt = f"""
-    {anthropic.HUMAN_PROMPT}
-    Using the following context, create a structured summary of the document:
-    Context:
-    {context}
-    {anthropic.AI_PROMPT}
-    """
-    response = anthropic_client.completions.create(
-        model="claude-2",
-        max_tokens_to_sample=2000,
-        temperature=0,
-        prompt=prompt
-    )
-    return response.completion
-
+# Routes
 @app.route('/')
 def index():
-    return render_template('index.html')
+    dashboard_data = {"images": [], "tables": []}
+    return render_template('index.html', dashboard_data=dashboard_data)
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -97,8 +81,6 @@ def chat():
         user_message = request.json.get('message')
         if not user_message:
             return jsonify({'response': 'No message provided.'}), 400
-
-        # Call the `ask_claude` function from chatbot.py
         bot_response = ask_claude(user_message)
         return jsonify({'response': bot_response})
     except Exception as e:
@@ -107,73 +89,48 @@ def chat():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return render_template('index.html', error="No file part provided.")
-
+        return render_template('index.html', error="No file part provided.", dashboard_data={"images": [], "tables": []})
     file = request.files['file']
     if file.filename == '':
-        return render_template('index.html', error="No file selected.")
-
-    # Save the uploaded file
+        return render_template('index.html', error="No file selected.", dashboard_data={"images": [], "tables": []})
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(file_path)
-
-    return render_template('index.html', message="File uploaded successfully!", uploaded_file=file.filename)
+    return render_template('index.html', message="File uploaded successfully!", uploaded_file=file.filename, dashboard_data={"images": [], "tables": []})
 
 @app.route('/generate_summary', methods=['POST'])
-def generate_summary():
+def generate_summary_route():
     uploaded_file = request.form.get('uploaded_file')
     if not uploaded_file:
-        return render_template('index.html', error="No uploaded file found for summary generation.")
-    
+        return render_template('index.html', error="No uploaded file found for summary generation.", dashboard_data={"images": [], "tables": []})
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file)
     try:
-        # Extract text from the PDF
-        raw_text = process_pdf(file_path)
-        
-        # Beautify the output for better readability
-        beautified_text = beautify_text("\n".join(raw_text))
-        
-        return render_template('index.html', summary=beautified_text, uploaded_file=uploaded_file)
+        chunks = process_pdf(file_path)
+        index_pdf_chunks(chunks)
+        retrieved_chunks = retrieve_relevant_chunks("Summarize the document", top_k=5)
+        summary = beautify_text("\n".join(retrieved_chunks))
+        return render_template('index.html', summary=summary, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
     except Exception as e:
-        import traceback
         error_details = traceback.format_exc()
         print(f"Error generating summary: {e}")
         print(error_details)
-        return render_template('index.html', error=f"Error generating summary: {str(e)}")
+        return render_template('index.html', error=f"Error generating summary: {str(e)}", dashboard_data={"images": [], "tables": []})
 
 @app.route('/e_learning', methods=['POST'])
 def e_learning():
     uploaded_file = request.form.get('uploaded_file')
     if not uploaded_file:
-        return render_template('index.html', error="No uploaded file found for e-learning.")
-    
+        return render_template('index.html', error="No uploaded file found for e-learning.", dashboard_data={"images": [], "tables": []})
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file)
     try:
-        # Example: Generate notes for chapters 1-3
         chapter_notes = {}
         for chapter in range(1, 3):
             query = f"Detailed notes for Chapter {chapter}"
             retrieved_chunks = retrieve_relevant_chunks(query, top_k=5)
             notes = generate_detailed_notes(retrieved_chunks, chapter)
             chapter_notes[chapter] = notes
-
-        return render_template('index.html', chapter_notes=chapter_notes, uploaded_file=uploaded_file)
+        return render_template('index.html', chapter_notes=chapter_notes, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
     except Exception as e:
-        return render_template('index.html', error=f"Error generating e-learning content: {str(e)}")
-
-def beautify_text(text):
-    # Split the text into lines or paragraphs
-    lines = text.split('\n')
-
-    # Remove any empty lines
-    cleaned_lines = [line.strip() for line in lines if line.strip()]
-
-    # Format as bullet points
-    formatted_text = '\n'.join(f"- {line}" for line in cleaned_lines)
-    
-    return formatted_text
-
-from flask import send_from_directory
+        return render_template('index.html', error=f"Error generating e-learning content: {str(e)}", dashboard_data={"images": [], "tables": []})
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
