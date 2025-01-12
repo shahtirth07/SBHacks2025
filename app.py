@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from e_learning import generate_e_learning_notes  # Import the necessary function
 import os
 import traceback
 from dotenv import load_dotenv
@@ -6,6 +7,7 @@ from summary import process_pdf, retrieve_relevant_chunks, generate_detailed_not
 import openai
 import anthropic
 from chatbot import ask_claude
+from e_learning import extract_pdf_text , generate_detailed_notes_with_anthropic 
 
 app = Flask(__name__)
 
@@ -46,30 +48,9 @@ def upload_file():
     file = request.files['file']
     if file.filename == '':
         return render_template('index.html', error="No file selected.", dashboard_data={"images": [], "tables": []})
-    
-    # Save the uploaded file
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(file_path)
-
-    # Call the service to process the uploaded file
-    try:
-        from Sycamore import process_and_encode_file  # Import your service function
-        encoding_message = process_and_encode_file(file_path)  # Process the file
-        return render_template(
-            'index.html',
-            message=f"File uploaded and {encoding_message}",
-            uploaded_file=file.filename,
-            dashboard_data={"images": [], "tables": []}
-        )
-    except Exception as e:
-        error_details = traceback.format_exc()
-        print(f"Error processing file: {e}")
-        print(error_details)
-        return render_template(
-            'index.html',
-            error=f"Error during file processing: {str(e)}",
-            dashboard_data={"images": [], "tables": []}
-        )
+    return render_template('index.html', message="File uploaded successfully!", uploaded_file=file.filename, dashboard_data={"images": [], "tables": []})
 
 @app.route('/generate_summary', methods=['POST'])
 def generate_summary_route():
@@ -93,17 +74,49 @@ def e_learning():
     uploaded_file = request.form.get('uploaded_file')
     if not uploaded_file:
         return render_template('index.html', error="No uploaded file found for e-learning.", dashboard_data={"images": [], "tables": []})
+    
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file)
     try:
-        chapter_notes = {}
-        for chapter in range(1, 3):  # Assuming 2 chapters, adjust as needed
-            query = f"Detailed notes for Chapter {chapter}"
-            retrieved_chunks = retrieve_relevant_chunks(query, top_k=5)
-            notes = generate_detailed_notes(retrieved_chunks)  # Generate detailed notes
-            chapter_notes[chapter] = notes
-        return render_template('index.html', message="E-learning content generated successfully!", chapter_notes=chapter_notes, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
+        # Generate detailed e-learning notes for each chapter from e_learning.py
+        chapter_notes = generate_e_learning_notes(file_path)
+        
+        if chapter_notes:
+            return render_template('index.html', message="E-learning content generated successfully!", chapter_notes=chapter_notes, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
+        else:
+            return render_template('index.html', error="Failed to generate e-learning content.", dashboard_data={"images": [], "tables": []})
     except Exception as e:
         return render_template('index.html', error=f"Error generating e-learning content: {str(e)}", dashboard_data={"images": [], "tables": []})
+
+def generate_e_learning_notes(pdf_path):
+    """
+    Extracts text from the PDF and generates e-learning notes for multiple chapters.
+    Args:
+        pdf_path (str): Path to the PDF file.
+    Returns:
+        dict: Dictionary containing notes for each chapter.
+    """
+    try:
+        # Extract text from PDF
+        text = extract_pdf_text(pdf_path)
+        if not text:
+            raise ValueError("Failed to extract text from PDF.")
+
+        chapter_notes = {}
+        total_chapters = 3  # Modify as needed for your PDF structure
+        
+        # Split the text into chunks for each chapter
+        chunk_size = len(text) // total_chapters  # Divide text roughly into 3 chapters
+        for chapter in range(1, total_chapters + 1):
+            chapter_text = text[(chapter - 1) * chunk_size : chapter * chunk_size]
+            notes = generate_detailed_notes_with_anthropic(chapter_text, chapter)
+            chapter_notes[chapter] = notes
+        
+        return chapter_notes
+    except Exception as e:
+        print(f"Error generating e-learning notes: {e}")
+        return None
+
+
 
 @app.route('/static/<path:filename>')
 def static_files(filename):

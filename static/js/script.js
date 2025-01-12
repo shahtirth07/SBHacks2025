@@ -1,6 +1,5 @@
 const inputField = document.getElementById("user-input");
 const chatWindow = document.getElementById("chat-window");
-
 const loadingScreen = document.getElementById("loading-screen");
 
 const sendMessage = async () => {
@@ -40,7 +39,7 @@ const sendMessage = async () => {
     // Display any error messages in the chat window
     chatWindow.innerHTML += `<div><strong>Error:</strong> ${error.message}</div>`;
   } finally {
-    // Hide the loading screen and scroll to the bottom
+    // Hide the loading screen and scroll to the bottom after a short delay
     setTimeout(() => {
       loadingScreen.style.display = "none"; // Hide the loading screen
       chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -55,13 +54,13 @@ inputField.addEventListener("keydown", (event) => {
     sendMessage();
   }
 });
-inputField.value = ""; // Clear input field
 
 document.getElementById("send-btn").addEventListener("click", () => {
   console.log("Send button clicked"); // Debug log
   sendMessage();
 });
 
+// Toggle the chat container visibility
 document.addEventListener("DOMContentLoaded", () => {
   const chatToggleBtn = document.getElementById("chat-toggle-btn");
   const chatContainer = document.getElementById("chat-container");

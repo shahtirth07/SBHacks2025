@@ -70,8 +70,10 @@
       <div class="e-learning-container">
         <h2>E-Learning Content</h2>
         {% for chapter, notes in chapter_notes.items() %}
-        <h3>Chapter {{ chapter }}</h3>
-        <textarea readonly>{{ notes }}</textarea>
+        <div class="chapter-container">
+          <h3>Chapter {{ chapter }}</h3>
+          <textarea readonly>{{ notes }}</textarea>
+        </div>
         {% endfor %}
       </div>
       {% endif %}
@@ -82,40 +84,45 @@
         <h2>Dashboard</h2>
         <div class="dashboard-content">
           {% if dashboard_data.images %}
-          <h3>Extracted Images</h3>
-          <div class="images-grid">
-            {% for image in dashboard_data.images %}
-            <div class="image-item">
-              <img src="{{ image.src }}" alt="Image with Caption" />
-              <p>{{ image.caption }}</p>
+          <div class="dashboard-images">
+            <h3>Extracted Images</h3>
+            <div class="images-grid">
+              {% for image in dashboard_data.images %}
+              <div class="image-item">
+                <img src="{{ image.src }}" alt="Image with Caption" />
+                <p>{{ image.caption }}</p>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %} {% if dashboard_data.tables %}
+          <div class="dashboard-tables">
+            <h3>Extracted Tables</h3>
+            {% for table in dashboard_data.tables %}
+            <div class="table-container">
+              <h4>{{ table.caption }}</h4>
+              <table>
+                <thead>
+                  <tr>
+                    {% for col in table.columns %}
+                    <th>{{ col }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in table.rows %}
+                  <tr>
+                    {% for cell in row %}
+                    <td>{{ cell }}</td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
             {% endfor %}
           </div>
-          {% endif %} {% if dashboard_data.tables %}
-          <h3>Extracted Tables</h3>
-          {% for table in dashboard_data.tables %}
-          <div class="table-container">
-            <h4>{{ table.caption }}</h4>
-            <table>
-              <thead>
-                <tr>
-                  {% for col in table.columns %}
-                  <th>{{ col }}</th>
-                  {% endfor %}
-                </tr>
-              </thead>
-              <tbody>
-                {% for row in table.rows %}
-                <tr>
-                  {% for cell in row %}
-                  <td>{{ cell }}</td>
-                  {% endfor %}
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% endfor %} {% endif %}
+          {% endif %}
         </div>
       </div>
       {% else %}
@@ -141,15 +148,15 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-      <img
-        src="{{ url_for('static', filename='images/chill_guy.png') }}"
-        alt="Loading..."
-      />
-      <p>Processing...</p>
+      <!-- Loading Screen -->
+      <div id="loading-screen" class="loading-screen">
+        <img
+          src="{{ url_for('static', filename='images/chill_guy.png') }}"
+          alt="Loading..."
+        />
+        <p>Processing...</p>
+      </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
