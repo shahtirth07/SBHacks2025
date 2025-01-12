@@ -17,13 +17,18 @@
       <div class="upload-container">
         <h2>Upload PDF</h2>
         <form action="/upload" method="POST" enctype="multipart/form-data">
-          <input type="file" name="file" id="file-input" accept=".pdf" required />
+          <input
+            type="file"
+            name="file"
+            id="file-input"
+            accept=".pdf"
+            required
+          />
           <button type="submit">Upload</button>
         </form>
         {% if message %}
         <p style="color: green">{{ message }}</p>
-        {% endif %}
-        {% if error %}
+        {% endif %} {% if error %}
         <p style="color: red">{{ error }}</p>
         {% endif %}
       </div>
@@ -33,11 +38,19 @@
       <div class="action-container">
         <h2>Generate Content</h2>
         <form action="/generate_summary" method="POST">
-          <input type="hidden" name="uploaded_file" value="{{ uploaded_file }}" />
+          <input
+            type="hidden"
+            name="uploaded_file"
+            value="{{ uploaded_file }}"
+          />
           <button type="submit">Generate Summary</button>
         </form>
         <form action="/e_learning" method="POST">
-          <input type="hidden" name="uploaded_file" value="{{ uploaded_file }}" />
+          <input
+            type="hidden"
+            name="uploaded_file"
+            value="{{ uploaded_file }}"
+          />
           <input type="hidden" name="summary" value="{{ summary }}" />
           <button type="submit">E-Learning</button>
         </form>
@@ -78,9 +91,7 @@
             </div>
             {% endfor %}
           </div>
-          {% endif %}
-
-          {% if dashboard_data.tables %}
+          {% endif %} {% if dashboard_data.tables %}
           <h3>Extracted Tables</h3>
           {% for table in dashboard_data.tables %}
           <div class="table-container">
@@ -104,8 +115,7 @@
               </tbody>
             </table>
           </div>
-          {% endfor %}
-          {% endif %}
+          {% endfor %} {% endif %}
         </div>
       </div>
       {% else %}
@@ -122,11 +132,24 @@
             <!-- Chat messages will appear here -->
           </div>
           <div class="chat-input">
-            <input type="text" id="user-input" placeholder="Type a message..." />
+            <input
+              type="text"
+              id="user-input"
+              placeholder="Type a message..."
+            />
             <button id="send-btn">Send</button>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+      <img
+        src="{{ url_for('static', filename='images/chill_guy.png') }}"
+        alt="Loading..."
+      />
+      <p>Processing...</p>
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

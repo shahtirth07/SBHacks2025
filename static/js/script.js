@@ -1,16 +1,19 @@
 const inputField = document.getElementById("user-input");
 const chatWindow = document.getElementById("chat-window");
 
+const loadingScreen = document.getElementById("loading-screen");
+
 const sendMessage = async () => {
-  const userInput = inputField.value.trim(); // Get input and trim whitespace
+  const userInput = inputField.value.trim();
   if (!userInput) {
-    console.log("No input to send"); // Debug log for empty input
+    console.log("No input to send");
     return;
   }
 
-  // Clear the input field immediately
+  // Clear the input field and show loading screen
   inputField.value = "";
-  inputField.focus(); // Ensure the cursor stays in the input field
+  inputField.focus();
+  loadingScreen.style.display = "flex"; // Show the loading screen
 
   // Append the user's message to the chat window
   const userMessage = `<div><strong>You:</strong> ${userInput}</div>`;
@@ -37,10 +40,11 @@ const sendMessage = async () => {
     // Display any error messages in the chat window
     chatWindow.innerHTML += `<div><strong>Error:</strong> ${error.message}</div>`;
   } finally {
-    // Scroll the chat window to the bottom after rendering
+    // Hide the loading screen and scroll to the bottom
     setTimeout(() => {
+      loadingScreen.style.display = "none"; // Hide the loading screen
       chatWindow.scrollTop = chatWindow.scrollHeight;
-    }, 0);
+    }, 500); // Delay hiding to allow the user to see the response
   }
 };
 
