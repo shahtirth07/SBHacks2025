@@ -13,17 +13,61 @@
     <div class="container">
       <h1>Welcome to Chatbot & Summarizer</h1>
 
-      <!-- Upload and Summary Section -->
+      <!-- Upload Section -->
       <div class="upload-container">
-        <h2>Upload and Summarize</h2>
-        <input type="file" id="file-input" />
-        <button id="upload-btn">Upload & Summarize</button>
+        <h2>Upload PDF</h2>
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+          <input type="file" name="file" id="file-input" accept=".pdf" />
+          <button type="submit">Upload</button>
+        </form>
+        {% if message %}
+        <p style="color: green">{{ message }}</p>
+        {% endif %} {% if error %}
+        <p style="color: red">{{ error }}</p>
+        {% endif %}
       </div>
 
+      <!-- Buttons for Actions -->
+      <div class="action-container">
+        <h2>Generate Content</h2>
+        <form action="/generate_summary" method="POST">
+          <input
+            type="hidden"
+            name="uploaded_file"
+            value="{{ uploaded_file }}"
+          />
+          <button type="submit">Generate Summary</button>
+        </form>
+        <form action="/e_learning" method="POST">
+          <input
+            type="hidden"
+            name="uploaded_file"
+            value="{{ uploaded_file }}"
+          />
+          <input type="hidden" name="summary" value="{{ summary }}" />
+          <!-- Persist summary -->
+          <button type="submit">E-Learning</button>
+        </form>
+      </div>
+
+      <!-- Summary Section -->
+      {% if summary %}
       <div class="summary-container">
         <h2>Summary</h2>
-        <textarea id="summary-text" readonly></textarea>
+        <textarea id="summary-text" readonly>{{ summary }}</textarea>
       </div>
+      {% endif %}
+
+      <!-- E-Learning Section -->
+      {% if chapter_notes %}
+      <div class="e-learning-container">
+        <h2>E-Learning Content</h2>
+        {% for chapter, notes in chapter_notes.items() %}
+        <h3>Chapter {{ chapter }}</h3>
+        <textarea readonly>{{ notes }}</textarea>
+        {% endfor %}
+      </div>
+      {% endif %}
 
       <!-- Placeholder for Dynamic Content -->
       <div class="dynamic-content">
