@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from summary import process_pdf, retrieve_relevant_chunks, generate_detailed_notes
 import openai
 import anthropic
+from chatbot import ask_claude
 
 app = Flask(__name__)
 
@@ -25,6 +26,18 @@ anthropic_client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
 def index():
     dashboard_data = {"images": [], "tables": []}
     return render_template('index.html', dashboard_data=dashboard_data)
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        user_message = request.json.get('message')
+        if not user_message:
+            return jsonify({'response': 'No message provided.'}), 400
+        # Call the `ask_claude` function from chatbot.py
+        bot_response = ask_claude(user_message)
+        return jsonify({'response': bot_response})
+    except Exception as e:
+        return jsonify({'response': f'Error: {str(e)}'}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
