@@ -4,7 +4,8 @@
 **1Click - Sycamore and RAG Pipelines Project**
 
 This repository showcases an advanced web-based application utilizing Sycamore and RAG (Retrieval-Augmented Generation) pipelines to deliver a comprehensive and interactive e-learning experience. The application is equipped with modules for summarization, dashboards, chatbot interaction, and eLearning, catering to the needs of students and educators.
-**
+
+
 **Key Features**
 
 **1. Summary Module****
@@ -49,9 +50,9 @@ Focused topics, such as the nervous system, ensure specialized learning outcomes
 
 **Deployment:** AWS with Terraform for scalable cloud deployment.
 
-**Functional Flow
+**Functional Flow**
 
-File Upload:**
+**File Upload:****
 
 Users can upload PDF files.
 
