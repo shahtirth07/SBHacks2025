@@ -46,9 +46,30 @@ def upload_file():
     file = request.files['file']
     if file.filename == '':
         return render_template('index.html', error="No file selected.", dashboard_data={"images": [], "tables": []})
+    
+    # Save the uploaded file
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(file_path)
-    return render_template('index.html', message="File uploaded successfully!", uploaded_file=file.filename, dashboard_data={"images": [], "tables": []})
+
+    # Call the service to process the uploaded file
+    try:
+        from Sycamore import process_and_encode_file  # Import your service function
+        encoding_message = process_and_encode_file(file_path)  # Process the file
+        return render_template(
+            'index.html',
+            message=f"File uploaded and {encoding_message}",
+            uploaded_file=file.filename,
+            dashboard_data={"images": [], "tables": []}
+        )
+    except Exception as e:
+        error_details = traceback.format_exc()
+        print(f"Error processing file: {e}")
+        print(error_details)
+        return render_template(
+            'index.html',
+            error=f"Error during file processing: {str(e)}",
+            dashboard_data={"images": [], "tables": []}
+        )
 
 @app.route('/generate_summary', methods=['POST'])
 def generate_summary_route():
@@ -60,7 +81,7 @@ def generate_summary_route():
         chunks = process_pdf(file_path)  # Process PDF into chunks
         retrieved_chunks = retrieve_relevant_chunks("Summarize the document", top_k=5)  # Retrieve relevant chunks from Pinecone
         summary = generate_detailed_notes(retrieved_chunks)  # Generate detailed notes
-        return render_template('index.html', summary=summary, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
+        return render_template('index.html', message="Summary generated successfully!", summary=summary, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
     except Exception as e:
         error_details = traceback.format_exc()
         print(f"Error generating summary: {e}")
@@ -80,7 +101,7 @@ def e_learning():
             retrieved_chunks = retrieve_relevant_chunks(query, top_k=5)
             notes = generate_detailed_notes(retrieved_chunks)  # Generate detailed notes
             chapter_notes[chapter] = notes
-        return render_template('index.html', chapter_notes=chapter_notes, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
+        return render_template('index.html', message="E-learning content generated successfully!", chapter_notes=chapter_notes, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
     except Exception as e:
         return render_template('index.html', error=f"Error generating e-learning content: {str(e)}", dashboard_data={"images": [], "tables": []})
 
