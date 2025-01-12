@@ -1,17 +1,16 @@
 import os
-import openai
-import anthropic
-from pinecone import Pinecone, ServerlessSpec
-from dotenv import load_dotenv
-import pdfplumber
 import re
+from dotenv import load_dotenv
 from openai import OpenAI
+from pinecone import Pinecone, ServerlessSpec
+import anthropic
+import pdfplumber
 
 # Load environment variables
 load_dotenv()
 
 Client = OpenAI()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OpenAI.api_key = os.getenv("OPENAI_API_KEY")
 
 pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index_name = "nervous"
@@ -67,52 +66,10 @@ def retrieve_relevant_chunks(query, top_k=5):
     results = index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
     return [match['metadata']['text'] for match in results['matches']]
 
-def generate_summary(retrieved_chunks):
-    context = "\n".join(retrieved_chunks)
-    prompt = f"""
-    {anthropic.HUMAN_PROMPT}
-    Using the following context, create a structured summary of the document. The summary should include:
-    1. Title of the document.
-    2. A brief introduction (2-3 sentences).
-    3. Detailed chapter summaries with bullet points for key concepts covered in each chapter.
-    4. A section on "Key Topics to Study" that highlights important points, terminologies, or concepts from the document.
-    5. A conclusion summarizing the document's purpose and main takeaways.
-    Ensure the summary is clear, concise, and easy to read with bullet points wherever applicable.
-    Context:
-    {context}
-    {anthropic.AI_PROMPT}
-    """
-    response = anthropic_client.completions.create(
-        model="claude-2",
-        max_tokens_to_sample=2000,
-        temperature=0,
-        prompt=prompt
-    )
-    return response.completion
-
-if __name__ == "__main__":
-    pdf_path = r"/Users/baddalagovardhanreddy/Desktop/Test/Data/NERVOUS.pdf"
-    
-    try:
-        print("Processing PDF and indexing chunks...")
-        chunks = process_pdf(pdf_path)
-        index_pdf_chunks(chunks)
-        
-        print("PDF content indexed successfully.")
-        
-        user_query = "Generate a detailed summary of the PDF."
-        retrieved_chunks = retrieve_relevant_chunks(user_query, top_k=5)
-        summary = generate_summary(retrieved_chunks)
-        
-        output_file = "NERVOUS_System_Summary.txt"
-        with open(output_file, "w") as f:
-            f.write(summary)
-        
-        print(f"Summary saved to {output_file}")
-        print("\nGenerated Summary:\n")
-        print(summary)
-    
-    except FileNotFoundError as e:
-        print(str(e))
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+def generate_detailed_notes(retrieved_chunks):
+    notes = []
+    for chunk in retrieved_chunks:
+        # Customize this logic based on your requirement to generate more detailed notes
+        note = f"Details: \n{chunk}\n"
+        notes.append(note)
+    return "\n".join(notes)

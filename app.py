@@ -1,15 +1,13 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from e_learning import generate_e_learning_notes  # Import the necessary function
 import os
 import traceback
-import pdfplumber
-import re
+from dotenv import load_dotenv
+from summary import process_pdf, retrieve_relevant_chunks, generate_detailed_notes
 import openai
 import anthropic
-from pinecone import Pinecone, ServerlessSpec
-from dotenv import load_dotenv
-from summary import retrieve_relevant_chunks
-from e_learning import generate_detailed_notes
 from chatbot import ask_claude
+from e_learning import extract_pdf_text , generate_detailed_notes_with_anthropic 
 
 app = Flask(__name__)
 
@@ -23,51 +21,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Set API keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
-pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 anthropic_client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
-# Pinecone initialization
-index_name = "nervous"
-if index_name not in [idx.name for idx in pinecone_client.list_indexes()]:
-    pinecone_client.create_index(
-        name=index_name,
-        dimension=1536,
-        metric="cosine",
-        spec=ServerlessSpec(
-            cloud="aws",
-            region="us-east-1"
-        )
-    )
-index = pinecone_client.Index(index_name)
-
-# Utility functions
-def chunk_text(text, chunk_size=500):
-    text = re.sub(r'\s+', ' ', text)
-    words = text.split()
-    return [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
-
-def process_pdf(pdf_path):
-    if not os.path.exists(pdf_path):
-        raise FileNotFoundError(f"File not found: {pdf_path}")
-    with pdfplumber.open(pdf_path) as pdf:
-        text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
-    if not text.strip():
-        raise ValueError("The uploaded PDF is empty or contains no extractable text.")
-    return chunk_text(text)
-
-def index_pdf_chunks(chunks):
-    for i, chunk in enumerate(chunks):
-        embedding = openai.Embedding.create(
-            model="text-embedding-ada-002",
-            input=[chunk]
-        )['data'][0]['embedding']
-        metadata = {"text": chunk}
-        index.upsert([{"id": f"chunk-{i}", "values": embedding, "metadata": metadata}])
-
-def beautify_text(text):
-    lines = text.split('\n')
-    cleaned_lines = [line.strip() for line in lines if line.strip()]
-    return '\n'.join(f"- {line}" for line in cleaned_lines)
 
 # Routes
 @app.route('/')
@@ -81,6 +35,7 @@ def chat():
         user_message = request.json.get('message')
         if not user_message:
             return jsonify({'response': 'No message provided.'}), 400
+        # Call the `ask_claude` function from chatbot.py
         bot_response = ask_claude(user_message)
         return jsonify({'response': bot_response})
     except Exception as e:
@@ -104,11 +59,10 @@ def generate_summary_route():
         return render_template('index.html', error="No uploaded file found for summary generation.", dashboard_data={"images": [], "tables": []})
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file)
     try:
-        chunks = process_pdf(file_path)
-        index_pdf_chunks(chunks)
-        retrieved_chunks = retrieve_relevant_chunks("Summarize the document", top_k=5)
-        summary = beautify_text("\n".join(retrieved_chunks))
-        return render_template('index.html', summary=summary, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
+        chunks = process_pdf(file_path)  # Process PDF into chunks
+        retrieved_chunks = retrieve_relevant_chunks("Summarize the document", top_k=5)  # Retrieve relevant chunks from Pinecone
+        summary = generate_detailed_notes(retrieved_chunks)  # Generate detailed notes
+        return render_template('index.html', message="Summary generated successfully!", summary=summary, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
     except Exception as e:
         error_details = traceback.format_exc()
         print(f"Error generating summary: {e}")
@@ -120,17 +74,49 @@ def e_learning():
     uploaded_file = request.form.get('uploaded_file')
     if not uploaded_file:
         return render_template('index.html', error="No uploaded file found for e-learning.", dashboard_data={"images": [], "tables": []})
+    
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file)
     try:
-        chapter_notes = {}
-        for chapter in range(1, 3):
-            query = f"Detailed notes for Chapter {chapter}"
-            retrieved_chunks = retrieve_relevant_chunks(query, top_k=5)
-            notes = generate_detailed_notes(retrieved_chunks, chapter)
-            chapter_notes[chapter] = notes
-        return render_template('index.html', chapter_notes=chapter_notes, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
+        # Generate detailed e-learning notes for each chapter from e_learning.py
+        chapter_notes = generate_e_learning_notes(file_path)
+        
+        if chapter_notes:
+            return render_template('index.html', message="E-learning content generated successfully!", chapter_notes=chapter_notes, uploaded_file=uploaded_file, dashboard_data={"images": [], "tables": []})
+        else:
+            return render_template('index.html', error="Failed to generate e-learning content.", dashboard_data={"images": [], "tables": []})
     except Exception as e:
         return render_template('index.html', error=f"Error generating e-learning content: {str(e)}", dashboard_data={"images": [], "tables": []})
+
+def generate_e_learning_notes(pdf_path):
+    """
+    Extracts text from the PDF and generates e-learning notes for multiple chapters.
+    Args:
+        pdf_path (str): Path to the PDF file.
+    Returns:
+        dict: Dictionary containing notes for each chapter.
+    """
+    try:
+        # Extract text from PDF
+        text = extract_pdf_text(pdf_path)
+        if not text:
+            raise ValueError("Failed to extract text from PDF.")
+
+        chapter_notes = {}
+        total_chapters = 3  # Modify as needed for your PDF structure
+        
+        # Split the text into chunks for each chapter
+        chunk_size = len(text) // total_chapters  # Divide text roughly into 3 chapters
+        for chapter in range(1, total_chapters + 1):
+            chapter_text = text[(chapter - 1) * chunk_size : chapter * chunk_size]
+            notes = generate_detailed_notes_with_anthropic(chapter_text, chapter)
+            chapter_notes[chapter] = notes
+        
+        return chapter_notes
+    except Exception as e:
+        print(f"Error generating e-learning notes: {e}")
+        return None
+
+
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
