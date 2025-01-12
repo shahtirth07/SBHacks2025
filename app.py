@@ -8,7 +8,7 @@ from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
 import re
 from summary import summarize_pdf
-from elearning import generate_detailed_notes
+from e_learning import generate_detailed_notes
 
 app = Flask(__name__)
 

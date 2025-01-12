@@ -77,18 +77,25 @@ def index_pdf_chunks(chunks):
         index.upsert([{"id": f"chunk-{i}", "values": embedding, "metadata": metadata}])
 
 # Function to query Pinecone and retrieve relevant chunks
-def retrieve_relevant_chunks(query, top_k=5):
+def retrieve_relevant_chunks(query, top_k=5, index=None):
     """
     Query Pinecone to retrieve the most relevant chunks for the input query.
     """
+    if index is None:
+        raise ValueError("Pinecone index object is required.")
+
+    print(f"Querying Pinecone with query: {query}")
+    print(f"Index type: {type(index)}")  # Debug: Verify index type
+
     query_embedding = openai.Embedding.create(
         model="text-embedding-ada-002",
         input=[query]
     )['data'][0]['embedding']
+
     results = index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
     return [match['metadata']['text'] for match in results['matches']]
 
-# Function to generate detailed notes for a chapter
+    # Function to generate detailed notes for a chapter
 def generate_detailed_notes(retrieved_chunks, chapter_number):
     """
     Use Anthropic Claude to generate detailed notes for a chapter.
@@ -120,10 +127,10 @@ def generate_detailed_notes(retrieved_chunks, chapter_number):
 
 # Main function
 if __name__ == "__main__":
-    # Dynamically fetch the PDF file path
+    os.makedirs("./uploads", exist_ok=True)
     uploaded_file_name = input("Enter the uploaded file name (from ./uploads/ directory): ").strip()
     pdf_path = f"./uploads/{uploaded_file_name}"  # Construct the dynamic path
-    
+
     try:
         print("Processing PDF and indexing chunks...")
         
@@ -140,7 +147,7 @@ if __name__ == "__main__":
             
             # Customize query for each chapter
             query = f"Detailed notes for Chapter {chapter}"
-            retrieved_chunks = retrieve_relevant_chunks(query, top_k=5)
+            retrieved_chunks = retrieve_relevant_chunks(query, top_k=5, index=index)  # Pass index explicitly
             notes = generate_detailed_notes(retrieved_chunks, chapter)
             
             # Save notes to a chapter-specific file
