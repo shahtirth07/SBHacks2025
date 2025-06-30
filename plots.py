@@ -25,9 +25,7 @@ from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
 
 # Set environment variables
-os.environ["ANTHROPIC_API_KEY"] = "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"
-os.environ["PINECONE_API_KEY"] = "pcsk_4P1CDJ_3Dx22sxGN8Vq2hS7TXe2MWgD2gp1QFe4z8Qnj4g86rcK3HSA9xiPXEjxpTXrLrt"
-# Initialize Pinecone
+
 pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
 # Pinecone setup
